@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 
+
 class PostController extends Controller
 {
     /**
@@ -19,8 +20,8 @@ class PostController extends Controller
     public function index()
     {
         //
-        $posts = Post::get();
-        return view('posts.index', ['posts' => $posts]);
+        $posts = \App\Models\Post::get();
+        return view('posts.index', compact('posts'));
     }
 
     /**
@@ -40,23 +41,50 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
+
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'Title' => 'required|max:100',
+            'Description' => 'required',
+        ]);
+
+        if($request->hasFile('img')){
+
+            $filenameWithExt = $request->file('img')->getClientOriginalName();
+
+            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+
+            $extension = $request->file('img')->getClientOriginalExtension();
+
+            $filenameToStore = $filename.'_'.time().'.'.$extension;
+
+            $path = $request->file('img')->storeAs('public/img', $filenameToStore);
+        } 
+        else {
+            $filenameToStore = '';
+        }
+
         $post = new Post();
-        $post->title = $request->title;
-        $post->description = $request->description;
-        $post->created_at = $request->created_at;
+        $post->Title = $request->Title;
+        $post->Description = $request->Description;
+        //$post->img = $request->img;
         $post->save();
 
-        return redirect('/posts');
+        if ($post->save()) {
+            return redirect('/posts')->with('status', 'Sucessfully save');
+        } else {
+            return redirect('/posts')->with('status', 'Failed to save');
+        }
+
+        // return redirect('/posts');
 
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Post  $post
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -64,53 +92,57 @@ class PostController extends Controller
         //
         $post = \App\Models\Post::find($id);
         return view('posts.show', compact('post'));
+        // dd($post);
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Models\Post  $post
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
     {
         //
         $post = \App\Models\Post::find($id);
-
         return view('posts.edit', compact('post'));
-
     }
 
     /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Post  $post
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        //
-        $post = \App\Models\Post::find($id);
-        $post->title = $request->title;
-        $post->description = $request->description;
-        $post->save();
+        //if (! Gate::allows('update-post', $post)) {
+        //    abort(403);
+        //}
 
-        return redirect('/posts');
+        $post = \App\Models\Post::find($id);
+            $post->Title = $request->Title;
+            $post->Description = $request->Description;
+            $post->save();
+
+            return redirect('/posts');
+
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Post  $post
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
         //
+
         $post = \App\Models\Post::find($id);
         $post->delete();
-        
+
         return redirect('/posts');
     }
 }
