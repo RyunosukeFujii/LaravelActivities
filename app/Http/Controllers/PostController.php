@@ -68,7 +68,7 @@ class PostController extends Controller
         $post = new Post();
         $post->Title = $request->Title;
         $post->Description = $request->Description;
-        //$post->img = $request->img;
+        $post->img = $request->img;
         $post->save();
 
         if ($post->save()) {
@@ -91,7 +91,8 @@ class PostController extends Controller
     {
         //
         $post = \App\Models\Post::find($id);
-        return view('posts.show', compact('post'));
+        $comments = $post->comments;
+        return view('posts.show', compact('post','comments'));
         // dd($post);
     }
 
